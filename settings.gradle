@@ -1,4 +1,5 @@
 rootProject.name = 'kafka-java'
 include 'application'
 include 'wikimedia'
+include 'opensearch'
 

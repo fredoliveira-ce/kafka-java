@@ -17,15 +17,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 
-
 public class OpenSearchConsumer {
     public static void main(String[] args) throws IOException {
         Logger log = LoggerFactory.getLogger(OpenSearchConsumer.class.getSimpleName());
 
-        RestHighLevelClient client = createOpenSearchClient();
+        final var client = createOpenSearchClient();
 
         try (client) {
-            boolean hasIndex = client.indices().exists(new GetIndexRequest("wikimedia"), RequestOptions.DEFAULT);
+            final boolean hasIndex = client.indices().exists(new GetIndexRequest("wikimedia"), RequestOptions.DEFAULT);
 
             if (!hasIndex) {
                 CreateIndexRequest request = new CreateIndexRequest("wikimedia");
@@ -39,17 +38,17 @@ public class OpenSearchConsumer {
     }
 
     private static RestHighLevelClient createOpenSearchClient() {
-        String source = "http://localhost:9200";
+        final var source = "http://localhost:9200";
+        final var uri = URI.create(source);
+        final var userInfo = uri.getUserInfo();
 
         RestHighLevelClient restHighLevelClient;
-        URI uri = URI.create(source);
-        String userInfo = uri.getUserInfo();
 
         if (userInfo == null) {
             restHighLevelClient = new RestHighLevelClient(RestClient.builder(new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme())));
         } else {
-            String [] auth = userInfo.split(":");
-            CredentialsProvider provider = new BasicCredentialsProvider();
+            final String [] auth = userInfo.split(":");
+            final CredentialsProvider provider = new BasicCredentialsProvider();
             provider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(auth[0], auth[1]));
 
             restHighLevelClient = new RestHighLevelClient(

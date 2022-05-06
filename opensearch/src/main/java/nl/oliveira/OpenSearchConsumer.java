@@ -11,6 +11,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.opensearch.action.bulk.BulkRequest;
+import org.opensearch.action.bulk.BulkResponse;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
 import org.opensearch.client.RequestOptions;
@@ -59,12 +61,16 @@ public class OpenSearchConsumer {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(3000));
                 log.info("Received {} records", records.count());
 
+                BulkRequest bulkRequest = new BulkRequest();
+
                 for (ConsumerRecord<String, String> record : records) {
                     final var id = extractId(record.value());
 
                     IndexRequest indexRequest = new IndexRequest("wikimedia")
                             .source(record.value(), XContentType.JSON)
                             .id(id);
+
+                    bulkRequest.add(indexRequest);
 
                     IndexResponse response = client.index(indexRequest, RequestOptions.DEFAULT);
 
@@ -73,8 +79,11 @@ public class OpenSearchConsumer {
                     log.info(response.getId());
                 }
 
+                if (bulkRequest.numberOfActions() > 0) {
+                    BulkResponse bulkResponse = client.bulk(bulkRequest, RequestOptions.DEFAULT);
+                    log.info("Inserted {}", bulkResponse.getItems().length);
+                }
             }
-
         }
     }
 
